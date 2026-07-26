@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hamster Roll - La Grande Aventure Pokémon</title>
+  <style>
+    body {
+      margin: 0; overflow: hidden; background: #a67c52;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    }
+
+    #ui {
+      position: absolute; top: 12px; left: 12px;
+      color: #1e293b; font-weight: bold; font-size: 14px;
+      background: rgba(255, 255, 255, 0.92); padding: 8px 14px;
+      border-radius: 12px; border: 2px solid #b45309;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: none; z-index: 10;
+    }
+
+    #progress-container {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      width: 50%; max-width: 360px; height: 18px;
+      background: rgba(15, 23, 42, 0.7); border: 2px solid #facc15;
+      border-radius: 12px; padding: 2px; z-index: 10;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    #progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #22c55e 0%, #eab308 25%, #ef4444 50%, #ec4899 75%, #facc15 100%);
+      border-radius: 8px; transition: width 0.1s linear;
+    }
+
+    #progress-icon {
+      position: absolute; top: -6px; left: 0%; transform: translateX(-50%);
+      font-size: 18px; pointer-events: none; transition: left 0.1s linear;
+    }
+
+    .progress-marker { position: absolute; top: -20px; font-size: 11px; font-weight: bold; }
+    #marker-cat { left: 20%; }
+    #marker-ghast { left: 40%; }
+    #marker-choco { left: 55%; }
+    #marker-pika { left: 83%; }
+    #marker-finish { right: -5px; }
+
+    #jump-hud {
+      position: absolute; top: 12px; right: 12px;
+      background: rgba(255, 255, 255, 0.92); padding: 6px 12px;
+      border-radius: 12px; border: 2px solid #0284c7; font-weight: bold;
+      color: #0369a1; z-index: 10; font-size: 13px;
+    }
+
+    #pause-btn {
+      position: absolute; top: 55px; right: 12px;
+      background: rgba(255, 255, 255, 0.92); border: 2px solid #64748b;
+      padding: 6px 12px; border-radius: 10px; cursor: pointer; z-index: 10;
+      font-weight: bold; font-size: 13px;
+    }
+
+    #boss-hud {
+      position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%);
+      background: rgba(185, 28, 28, 0.92); color: white; padding: 6px 16px;
+      border-radius: 20px; border: 2px solid #fecaca; font-weight: bold;
+      font-size: 14px; text-align: center; display: none; z-index: 15;
+      box-shadow: 0 0 15px rgba(220, 38, 38, 0.6); pointer-events: none;
+    }
+
+    #zone-alert {
+      position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%);
+      color: #1e293b; font-size: 26px; font-weight: 900; text-shadow: 0 0 10px rgba(255,255,255,0.5);
+      display: none; z-index: 15; text-align: center; pointer-events: none; width: 90%;
+    }
+
+    .mobile-btn {
+      position: absolute; bottom: 20px; width: 65px; height: 65px;
+      border-radius: 50%; background: rgba(255, 255, 255, 0.85);
+      border: 3px solid #b45309; font-size: 24px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 12; touch-action: manipulation;
+    }
+    #btn-left { left: 20px; }
+    #btn-right { right: 20px; }
+    #btn-jump { 
+      left: 50%; transform: translateX(-50%); 
+      width: 75px; height: 75px; 
+      background: rgba(14, 165, 233, 0.9); border-color: white; color: white; 
+    }
+
+    .modal {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fdfbf7; border: 3px solid #78350f;
+      border-radius: 20px; padding: 16px;
+      text-align: center; color: #b91c1c; display: none;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4); width: 88%; max-width: 380px; z-index: 20;
+    }
+
+    .modal h1 { margin: 0 0 6px 0; font-size: 19px; font-weight: 800; color: #dc2626; }
+    .modal-stats { color: #451a03; font-size: 13px; margin-bottom: 8px; font-weight: 600; }
+
+    .shop-box {
+      margin: 6px 0; background: #e6f4ea; border-radius: 12px;
+      padding: 6px 8px; border: 1.5px solid #34a853; text-align: left;
+    }
+    .shop-box h3 { margin: 0 0 4px 0; text-align: center; color: #0d652d; font-size: 12px; font-weight: 800; }
+    
+    .shop-item {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 4px; background: white; padding: 4px 8px;
+      border-radius: 8px; border: 1px solid #a8dab5; font-size: 11px; font-weight: bold; color: #1e293b;
+    }
+
+    .shop-btn {
+      background: #0d9488; color: white; border: none; padding: 4px 8px;
+      border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 10px;
+    }
+    .shop-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .btn-revive {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white; border: none; padding: 10px 16px; border-radius: 20px;
+      font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 6px;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
+    }
+    .btn-revive:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
+
+    .btn-restart {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white; border: none; padding: 10px 16px; border-radius: 20px;
+      font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 6px;
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <div id="ui">🐹 <span id="scoreText">0</span>m | 🌻 <span id="seedsText">0</span></div>
+
+  <div id="progress-container">
+    <span id="marker-cat" class="progress-marker">🐱</span>
+    <span id="marker-ghast" class="progress-marker">👻</span>
+    <span id="marker-choco" class="progress-marker">🍫</span>
+    <span id="marker-pika" class="progress-marker">⚡</span>
+    <span id="marker-finish" class="progress-marker">🏆</span>
+    <div id="progress-bar"></div>
+    <div id="progress-icon">🐹</div>
+  </div>
+
+  <div id="jump-hud">🦘 Saut : <span id="jumpStatus">PRÊT</span></div>
+  <button id="pause-btn" onclick="togglePause()">⏸️ Pause</button>
+
+  <div id="zone-alert">🚀 C'EST PARTI !</div>
+
+  <div id="boss-hud">
+    <span id="bossName">🐱 BOSS CHAT ATTACK !</span><br>
+    ❤️ <span id="bossHealth">3</span>/<span id="bossMaxHealth">3</span> | ⏱️ <span id="bossTimer">40</span>s
+  </div>
+
+  <div id="btn-left" class="mobile-btn">◀</div>
+  <div id="btn-jump" class="mobile-btn" onclick="triggerJump()">🦘</div>
+  <div id="btn-right" class="mobile-btn">▶</div>
+
+  <div id="game-over" class="modal">
+    <h1 id="gameOverTitle">CRASH SUR UN OBSTACLE ! 💥</h1>
+    <div class="modal-stats">
+      Distance : <b style="color:#b45309;"><span id="finalScore">0</span>m</b> | Graines : 🌻 <b style="color:#d97706;"><span id="finalSeeds">0</span></b>
+    </div>
+
+    <button id="reviveBtn" class="btn-revive" onclick="reviveGame()">💖 Revivre (50 🌻)</button>
+
+    <div class="shop-box">
+      <h3>🛒 BOUTIQUE & SKINS</h3>
+      <div class="shop-item">
+        <span>🧲 Aimant Graines</span>
+        <button id="upgMagnetBtn" class="shop-btn" onclick="buyUpgrade('magnet', 30)">30 🌻</button>
+      </div>
+      <div class="shop-item">
+        <span>⚡ Saut Rapide (3s)</span>
+        <button id="upgJumpBtn" class="shop-btn" onclick="buyUpgrade('jump', 50)">50 🌻</button>
+      </div>
+      <div class="shop-item">
+        <span>🎩 Skin Chapeau Rouge</span>
+        <button id="skinHatBtn" class="shop-btn" onclick="buySkin('hat', 40)">40 🌻</button>
+      </div>
+      <div class="shop-item">
+        <span>👑 Skin Couronne d'Or</span>
+        <button id="skinCrownBtn" class="shop-btn" onclick="buySkin('crown', 80)">80 🌻</button>
+      </div>
+    </div>
+
+    <button class="btn-restart" onclick="restartGame()">🔄 Relancer la Partie !</button>
+  </div>
+
+  <script>
+    const MAX_DISTANCE = 2400; // Ajusté à 2400m pour intégrer le combat à 2000m
+    const OBSTACLE_SPACING = 23; 
+    const SAFE_START_DISTANCE = 80;
+
+    let audioCtx = null;
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    function playSound(type) {
+      initAudio(); if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        if (type === 'jump') { osc.frequency.setValueAtTime(400, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+        if (type === 'seed') { osc.frequency.setValueAtTime(800, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.08); }
+        if (type === 'hit') { osc.frequency.setValueAtTime(150, audioCtx.currentTime); gain.gain.setValueAtTime(0.3, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
+        if (type === 'powerup') { osc.frequency.setValueAtTime(600, audioCtx.currentTime); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+      } catch(e){}
+    }
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xa67c52);
+    scene.fog = new THREE.FogExp2(0xa67c52, 0.005);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9); scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6); dirLight.position.set(10, 30, 10); scene.add(dirLight);
+
+    const slopeGroup = new THREE.Group();
+    slopeGroup.rotation.x = 0.15;
+    scene.add(slopeGroup);
+
+    const trackWidth = 12;
+    const trackMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+    const track = new THREE.Mesh(new THREE.BoxGeometry(trackWidth, 0.5, 1000), trackMat);
+    track.position.set(0, -0.25, -450); slopeGroup.add(track);
+
+    const borderMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+    const borderL = new THREE.Mesh(new THREE.BoxGeometry(1, 0.6, 1000), borderMat); borderL.position.set(-trackWidth/2 - 0.5, -0.2, -450); slopeGroup.add(borderL);
+    const borderR = new THREE.Mesh(new THREE.BoxGeometry(1, 0.6, 1000), borderMat); borderR.position.set(trackWidth/2 + 0.5, -0.2, -450); slopeGroup.add(borderR);
+
+    // FLAMMES NETHER
+    const flameGroup = new THREE.Group(); flameGroup.visible = false; slopeGroup.add(flameGroup);
+    const flamesList = [];
+    for (let i = 0; i < 40; i++) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(0.25, 6, 6), new THREE.MeshBasicMaterial({ color: 0xff4500 }));
+      p.position.set((Math.random() - 0.5) * 20, Math.random() * 8, -Math.random() * 100);
+      flameGroup.add(p);
+      flamesList.push({ mesh: p, speed: 0.05 + Math.random() * 0.05 });
+    }
+
+    // DECORS BONBONS
+    const candyDecoGroup = new THREE.Group(); candyDecoGroup.visible = false; slopeGroup.add(candyDecoGroup);
+    for (let i = 0; i < 25; i++) {
+      const tree = new THREE.Group();
+      tree.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 4, 8), new THREE.MeshStandardMaterial({ color: 0xfbcfe8 })));
+      const fol = new THREE.Mesh(new THREE.SphereGeometry(1.8, 12, 12), new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xf472b6 : 0xf43f5e }));
+      fol.position.y = 2.5; tree.add(fol);
+      const side = Math.random() > 0.5 ? 1 : -1;
+      tree.position.set(side * (12 + Math.random() * 10), 0, -Math.random() * 200);
+      candyDecoGroup.add(tree);
+    }
+
+    // DECORS POKEMON
+    const pokemonDecoGroup = new THREE.Group(); pokemonDecoGroup.visible = false; slopeGroup.add(pokemonDecoGroup);
+    function createPokeballMesh() {
+      const g = new THREE.Group();
+      const topHalf = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+      const botHalf = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.52, 0.2, 16), new THREE.MeshBasicMaterial({ color: 0x1e293b }));
+      const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.25, 12), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      btn.rotation.x = Math.PI / 2; btn.position.z = 1.4;
+      g.add(topHalf); g.add(botHalf); g.add(band); g.add(btn);
+      return g;
+    }
+    for (let i = 0; i < 20; i++) {
+      const pb = createPokeballMesh();
+      const side = (i % 2 === 0) ? 1 : -1;
+      pb.position.set(side * (10 + Math.random() * 6), 1.5, -i * 20);
+      pokemonDecoGroup.add(pb);
+    }
+
+    // HAMSTER
+    const playerGroup = new THREE.Group(); slopeGroup.add(playerGroup);
+    const bubbleMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, opacity: 0.9, transparent: true, roughness: 0.1 });
+    playerGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.0, 32, 32), bubbleMat));
+    
+    const hamsterGroup = new THREE.Group();
+    hamsterGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 16), new THREE.MeshStandardMaterial({ color: 0xd97706 })));
+    const earMatH = new THREE.MeshStandardMaterial({ color: 0xfbcfe8 });
+    const earHL = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), earMatH); earHL.position.set(-0.35, 0.45, 0.2); hamsterGroup.add(earHL);
+    const earHR = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), earMatH); earHR.position.set(0.35, 0.45, 0.2); hamsterGroup.add(earHR);
+    const eyeMatH = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+    const eyeHL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), eyeMatH); eyeHL.position.set(-0.2, 0.15, 0.48); hamsterGroup.add(eyeHL);
+    const eyeHR = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), eyeMatH); eyeHR.position.set(0.2, 0.15, 0.48); hamsterGroup.add(eyeHR);
+    const noseH = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf43f5e })); noseH.position.set(0, 0.05, 0.52); hamsterGroup.add(noseH);
+
+    const hatMesh = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0xdc2626 })); hatMesh.position.y = 0.7; hatMesh.visible = false; hamsterGroup.add(hatMesh);
+    const crownMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 0.3, 6), new THREE.MeshStandardMaterial({ color: 0xfacc15 })); crownMesh.position.y = 0.75; crownMesh.visible = false; hamsterGroup.add(crownMesh);
+    playerGroup.add(hamsterGroup); playerGroup.position.set(0, 1.0, 0);
+
+    // BOSSES
+    const catBoss = new THREE.Group(); catBoss.position.set(0, 2.5, -35); catBoss.visible = false; slopeGroup.add(catBoss);
+    catBoss.add(new THREE.Mesh(new THREE.SphereGeometry(2.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0x475569 })));
+    const earMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+    const earL = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 4), earMat); earL.position.set(-1.2, 1.8, 0); earL.rotation.z = -0.2; catBoss.add(earL);
+    const earR = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 4), earMat); earR.position.set(1.2, 1.8, 0); earR.rotation.z = 0.2; catBoss.add(earR);
+    const catEyeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+    const cEL = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), catEyeMat); cEL.position.set(-0.8, 0.4, 1.8); catBoss.add(cEL);
+    const cER = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), catEyeMat); cER.position.set(0.8, 0.4, 1.8); catBoss.add(cER);
+    const catPaw = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 2.2, 6.0, 16), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+    catPaw.position.set(0, -3.0, 0); catBoss.add(catPaw);
+
+    const ghastBoss = new THREE.Group(); ghastBoss.position.set(0, 4.0, -45); ghastBoss.visible = false; slopeGroup.add(ghastBoss);
+    ghastBoss.add(new THREE.Mesh(new THREE.BoxGeometry(3.5, 3.5, 3.5), new THREE.MeshStandardMaterial({ color: 0xf8fafc })));
+    const ghastFaceMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+    const gEL = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.1), ghastFaceMat); gEL.position.set(-0.9, 0.5, 1.8); ghastBoss.add(gEL);
+    const gER = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.1), ghastFaceMat); gER.position.set(0.9, 0.5, 1.8); ghastBoss.add(gER);
+    const gMouth = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.1), ghastFaceMat); gMouth.position.set(0, -0.6, 1.8); ghastBoss.add(gMouth);
+    const ghastTentacles = [];
+    for (let i = 0; i < 6; i++) {
+      const tentacle = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.1, 1.8, 8), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }));
+      tentacle.position.set(-1.25 + i * 0.5, -2.4, (Math.random() - 0.5) * 1.5);
+      ghastBoss.add(tentacle); ghastTentacles.push(tentacle);
+    }
+
+    const chocoBoss = new THREE.Group(); chocoBoss.position.set(0, 3.5, -40); chocoBoss.visible = false; slopeGroup.add(chocoBoss);
+    const chocoMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.3 });
+    chocoBoss.add(new THREE.Mesh(new THREE.BoxGeometry(4.5, 6.0, 0.8), chocoMat));
+    const chocoEyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const eL = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.6, 3), chocoEyeMat); eL.position.set(-1, 1.5, 0.5); chocoBoss.add(eL);
+    const eR = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.6, 3), chocoEyeMat); eR.position.set(1, 1.5, 0.5); chocoBoss.add(eR);
+
+    const pikaBoss = new THREE.Group(); pikaBoss.position.set(0, 3.0, -40); pikaBoss.visible = false; slopeGroup.add(pikaBoss);
+    const pikaMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+    const pikaBody = new THREE.Mesh(new THREE.SphereGeometry(2.5, 16, 16), pikaMat); pikaBody.scale.set(1, 1.2, 1); pikaBoss.add(pikaBody);
+    const pikaEarL = new THREE.Group();
+    const eLBase = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.8, 8), pikaMat);
+    const eLTip = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 8), new THREE.MeshBasicMaterial({ color: 0x1e293b })); eLTip.position.y = 0.8;
+    pikaEarL.add(eLBase); pikaEarL.add(eLTip); pikaEarL.position.set(-1.2, 2.8, 0); pikaEarL.rotation.z = -0.4; pikaBoss.add(pikaEarL);
+    const pikaEarR = pikaEarL.clone(); pikaEarR.position.set(1.2, 2.8, 0); pikaEarR.rotation.z = 0.4; pikaBoss.add(pikaEarR);
+    const cheekMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const cheekL = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 12), cheekMat); cheekL.position.set(-1.4, 0.2, 1.8); pikaBoss.add(cheekL);
+    const cheekR = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 12), cheekMat); cheekR.position.set(1.4, 0.2, 1.8); pikaBoss.add(cheekR);
+    const tailShape = new THREE.BoxGeometry(0.4, 2.5, 0.2);
+    const pikaTail = new THREE.Mesh(tailShape, pikaMat); pikaTail.position.set(0, 0.5, -2.2); pikaTail.rotation.z = 0.6; pikaBoss.add(pikaTail);
+
+    // INDICATEURS
+    const pawWarn = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.05, 16), new THREE.MeshBasicMaterial({ color: 0xdc2626, transparent: true, opacity: 0.7 })); pawWarn.visible = false; slopeGroup.add(pawWarn);
+    const fireWarn = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.5, 16), new THREE.MeshBasicMaterial({ color: 0xff4500, transparent: true, opacity: 0.6 })); fireWarn.rotation.x = -Math.PI/2; fireWarn.visible = false; slopeGroup.add(fireWarn);
+
+    const LANES = [-3.8, 0, 3.8];
+
+    // OBSTACLES CLASSIQUES
+    function createGomme() {
+      const g = new THREE.Group();
+      const redHalf = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 1), new THREE.MeshStandardMaterial({ color: 0xef4444 })); redHalf.position.x = -0.4;
+      const blueHalf = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 1), new THREE.MeshStandardMaterial({ color: 0x2563eb })); blueHalf.position.x = 0.4;
+      g.add(redHalf); g.add(blueHalf); return g;
+    }
+    function createColle() {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.8, 16), new THREE.MeshStandardMaterial({ color: 0xfacc15 }));
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.6, 16), new THREE.MeshStandardMaterial({ color: 0xf97316 })); cap.position.y = 1.1;
+      g.add(body); g.add(cap); return g;
+    }
+    function createStylo() {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.2, 12), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 12), new THREE.MeshStandardMaterial({ color: 0x334155 })); tip.position.y = 1.35;
+      g.add(body); g.add(tip); g.rotation.z = Math.PI / 2; return g;
+    }
+    function createBois() { return new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 1.8), new THREE.MeshStandardMaterial({ color: 0x854d0e })); }
+
+    function createJelly() {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.2 }));
+      b.scale.set(1.5, 0.8, 0.8); return b;
+    }
+    function createTagada() { return new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 12, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.9 })); }
+    function createLolli() {
+      const g = new THREE.Group();
+      g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.5, 8), new THREE.MeshStandardMaterial({ color: 0xffffff })));
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.3, 16), new THREE.MeshStandardMaterial({ color: 0xec4899 }));
+      c.position.y = 2.2; c.rotation.x = Math.PI/2; g.add(c); return g;
+    }
+
+    // OBSTACLES POKEMON (AVEC YEUX & VISAGES)
+    function createRattata() {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({ color: 0x7e22ce })); body.scale.set(1, 0.8, 1.4);
+      const earL = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 8), new THREE.MeshStandardMaterial({ color: 0xa855f7 })); earL.position.set(-0.35, 0.6, 0.2);
+      const earR = earL.clone(); earR.position.x = 0.35;
+      const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.1), new THREE.MeshBasicMaterial({ color: 0xffffff })); teeth.position.set(0, -0.2, 0.8);
+      
+      // Yeux Rattata
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), eyeMat); eyeL.position.set(-0.3, 0.2, 0.6);
+      const eyeR = eyeL.clone(); eyeR.position.x = 0.3;
+
+      g.add(body); g.add(earL); g.add(earR); g.add(teeth); g.add(eyeL); g.add(eyeR); return g;
+    }
+
+    function createRacaillou() {
+      const g = new THREE.Group();
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.8, 1), new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.9 }));
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: 0x78716c })); armL.position.set(-1.0, 0.1, 0); armL.rotation.z = 0.2;
+      const armR = armL.clone(); armR.position.x = 1.0; armR.rotation.z = -0.2;
+      
+      // Visage Racaillou
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+      const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.05), eyeMat); eyeL.position.set(-0.25, 0.2, 0.75);
+      const eyeR = eyeL.clone(); eyeR.position.x = 0.25;
+      const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.05), eyeMat); mouth.position.set(0, -0.15, 0.75);
+
+      g.add(rock); g.add(armL); g.add(armR); g.add(eyeL); g.add(eyeR); g.add(mouth); return g;
+    }
+
+    function createMetamorph() {
+      const g = new THREE.Group();
+      
+      // Corps flasque & aplati à la base (d'après la référence)
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xc084fc, roughness: 0.3 });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.85, 16, 16), bodyMat);
+      body.scale.set(1.4, 0.55, 1.2); 
+      body.position.y = 0.3;
+      g.add(body);
+
+      // Yeux (Deux petits points noirs)
+      const dotMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), dotMat); eyeL.position.set(-0.25, 0.45, 0.75);
+      const eyeR = eyeL.clone(); eyeR.position.x = 0.25;
+      
+      // Bouche (Ligne droite)
+      const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.04, 0.04), dotMat); mouth.position.set(0, 0.33, 0.77);
+
+      g.add(eyeL); g.add(eyeR); g.add(mouth);
+      return g;
+    }
+
+    function createVacuum() {
+      const r = new THREE.Mesh(new THREE.TorusGeometry(1, 0.2, 8, 16), new THREE.MeshBasicMaterial({ color: 0x7c3aed }));
+      r.rotation.x = Math.PI/2; r.isVacuum = true; return r;
+    }
+    function createChili() {
+      const c = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.2, 8), new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xb91c1c }));
+      c.rotation.z = -0.5; c.isChili = true; return c;
+    }
+
+    function createCheese() {
+      const shape = new THREE.Shape(); shape.moveTo(0,0); shape.lineTo(2.5,0); shape.lineTo(0,1.4);
+      const c = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, {depth:2.5, bevelEnabled:false}), new THREE.MeshStandardMaterial({color:0xfacc15}));
+      c.position.set(-1.25, 0, -1.25); c.rotation.y = Math.PI/2; 
+      c.isCheeseRamp = true; c.used = false; return c;
+    }
+
+    // VARIABLES DU JEU
+    let gameSpeed = 0.1, distance = 0, seedsCount = 0;
+    let isGameOver = false, isPaused = false, playerX = 0, playerY = 1, vVel = 0, isGrounded = true;
+    let hasMagnet = false, jumpCooldownMax = 5, canJump = true, jumpTime = 0;
+    let hasHat = false, hasCrown = false;
+    let isNether = false, isCandy = false, isPokemon = false, isSuperChili = false, chiliTime = 0;
+    let nextChili = 280;
+    let activeBoss = null, bossHealth = 3, bossMaxHealth = 3, bossTimer = 40, bossInt = null, bossAtkCo = 0;
+    let catDef = false, ghastDef = false, chocoDef = false, pikaDef = false, animTime = 0;
+    let obstacles = [], seeds = [], projectiles = [], bossAttacks = [];
+
+    function spawnObstacle(z) {
+      const lane = LANES[Math.floor(Math.random()*LANES.length)];
+      const rand = Math.random();
+      let obs;
+      const cheeseChance = activeBoss ? 0.5 : 0.15;
+
+      if (rand < cheeseChance) obs = createCheese();
+      else if (rand < cheeseChance + 0.1) obs = createVacuum();
+      else {
+        if (isPokemon) {
+          const t = Math.floor(Math.random()*3);
+          obs = (t === 0) ? createRattata() : (t === 1) ? createRacaillou() : createMetamorph();
+        } else if (isCandy) {
+          const t = Math.floor(Math.random()*3);
+          obs = (t === 0) ? createJelly() : (t === 1) ? createTagada() : createLolli();
+        } else {
+          const t = Math.floor(Math.random()*4);
+          obs = (t === 0) ? createGomme() : (t === 1) ? createColle() : (t === 2) ? createStylo() : createBois();
+        }
+      }
+      obs.position.set(lane, obs.isCheeseRamp?0:0.7, z); 
+      obs.prevZ = z;
+      slopeGroup.add(obs); obstacles.push(obs);
+    }
+
+    function spawnSeed(z) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshStandardMaterial({color:0x1c1917}));
+      s.scale.set(0.8, 1.2, 0.8); s.position.set(LANES[Math.floor(Math.random()*LANES.length)], 0.7, z);
+      slopeGroup.add(s); seeds.push(s);
+    }
+
+    function initMap() {
+      for (let z = -30; z > -400; z -= OBSTACLE_SPACING) {
+        if (Math.abs(z) < SAFE_START_DISTANCE) {
+          spawnSeed(z);
+        } else {
+          if (Math.random() > 0.25) spawnObstacle(z); else spawnSeed(z);
+        }
+      }
+    }
+    initMap();
+
+    // CONTROLES
+    let keys = {};
+    window.addEventListener('keydown', e => { if(!isGameOver && !isPaused) { keys[e.key.toLowerCase()] = true; if(e.code === 'ArrowUp') triggerJump(); } });
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+    
+    document.getElementById('btn-left').addEventListener('touchstart', e => { e.preventDefault(); keys['arrowleft'] = true; });
+    document.getElementById('btn-left').addEventListener('touchend', e => { e.preventDefault(); keys['arrowleft'] = false; });
+    document.getElementById('btn-right').addEventListener('touchstart', e => { e.preventDefault(); keys['arrowright'] = true; });
+    document.getElementById('btn-right').addEventListener('touchend', e => { e.preventDefault(); keys['arrowright'] = false; });
+
+    function triggerJump() { 
+      if(canJump && isGrounded && !isGameOver && !isPaused){ 
+        vVel = 0.26; isGrounded = false; canJump = false; jumpTime = jumpCooldownMax; playSound('jump'); 
+      } 
+    }
+    
+    function togglePause() { if(!isGameOver){ isPaused = !isPaused; document.getElementById('pause-btn').innerText = isPaused ? "▶️" : "⏸️"; if(!isPaused) animate(); } }
+
+    function buyUpgrade(type, cost) {
+      if(seedsCount>=cost){ seedsCount-=cost; document.getElementById('seedsText').innerText=seedsCount;
+        if(type==='magnet'){
+          hasMagnet=true; 
+          const btn = document.getElementById('upgMagnetBtn');
+          btn.disabled=true; btn.innerText="Possédé";
+        } else {
+          jumpCooldownMax=3.0; 
+          const btn = document.getElementById('upgJumpBtn');
+          btn.disabled=true; btn.innerText="Possédé";
+        }
+      }
+    }
+    
+    function buySkin(type, cost) {
+      if(seedsCount>=cost){
+        seedsCount-=cost; 
+        document.getElementById('seedsText').innerText=seedsCount;
+        if(type==='hat') {
+          hasHat = true;
+          hatMesh.visible = true; crownMesh.visible = false;
+          const btn = document.getElementById('skinHatBtn');
+          btn.disabled = true; btn.innerText = "Possédé";
+        } else if(type==='crown') {
+          hasCrown = true;
+          crownMesh.visible = true; hatMesh.visible = false;
+          const btn = document.getElementById('skinCrownBtn');
+          btn.disabled = true; btn.innerText = "Possédé";
+        }
+      }
+    }
+
+    function startBoss(type) {
+      activeBoss = type; 
+      if (type==='cat') { bossHealth=bossMaxHealth=3; bossTimer=40; catBoss.visible=true; document.getElementById('bossName').innerText="🐱 CHAT"; }
+      else if (type==='ghast') { bossHealth=bossMaxHealth=5; bossTimer=40; ghastBoss.visible=true; document.getElementById('bossName').innerText="👻 GHAST"; }
+      else if (type==='choco') { bossHealth=bossMaxHealth=7; bossTimer=70; chocoBoss.visible=true; document.getElementById('bossName').innerText="🍫 CHOCO"; }
+      else { bossHealth=bossMaxHealth=10; bossTimer=120; pikaBoss.visible=true; document.getElementById('bossName').innerText="⚡ PIKACHU GÉANT"; }
+
+      document.getElementById('boss-hud').style.display='block';
+      document.getElementById('bossHealth').innerText=bossHealth; document.getElementById('bossMaxHealth').innerText=bossMaxHealth;
+      document.getElementById('bossTimer').innerText=bossTimer;
+      bossInt = setInterval(() => { if(!isGameOver && !isPaused && activeBoss){ bossTimer--; document.getElementById('bossTimer').innerText=bossTimer; if(bossTimer<=0){clearInterval(bossInt); triggerGameOver();} } }, 1000);
+    }
+
+    function bossAtk() {
+      const lane = LANES[Math.floor(Math.random()*LANES.length)];
+      if (activeBoss==='cat') {
+        pawWarn.position.set(lane, 0.1, 0); pawWarn.visible=true;
+        setTimeout(() => { if(!isGameOver && activeBoss==='cat'){ catPaw.position.set(lane, 0.5, 0); if(Math.abs(playerGroup.position.x-lane)<2.5 && playerY<3 && !isSuperChili) triggerGameOver(); setTimeout(()=>{catPaw.position.set(0,-3,0); pawWarn.visible=false;}, 600); } }, 1200);
+      } else {
+        fireWarn.position.set(lane, 0.1, -10); fireWarn.visible=true;
+        setTimeout(() => { if(!isGameOver && activeBoss){
+          let atk;
+          if(activeBoss==='pika') {
+            atk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.8, 3.0, 8), new THREE.MeshBasicMaterial({color: 0xfacc15}));
+            atk.rotation.x = Math.PI / 2;
+          } else {
+            const isChoco = activeBoss==='choco';
+            atk = new THREE.Mesh(isChoco ? new THREE.BoxGeometry(1.2,1.2,1.2) : new THREE.SphereGeometry(0.7,8,8), new THREE.MeshStandardMaterial({color: isChoco ? 0x451a03 : 0xef4444}));
+          }
+          atk.position.set(lane, 1.2, -40); slopeGroup.add(atk); bossAttacks.push(atk); setTimeout(()=>fireWarn.visible=false, 800);
+        } }, 1000);
+      }
+    }
+
+    function animate() {
+      if(isGameOver || isPaused) return; requestAnimationFrame(animate); animTime += 0.05;
+
+      const prog = Math.min(100, (distance/MAX_DISTANCE)*100);
+      document.getElementById('progress-bar').style.width = prog+'%';
+      document.getElementById('progress-icon').style.left = prog+'%';
+      if(distance>=MAX_DISTANCE && pikaDef) { triggerVictoire(); return; }
+
+      if (isNether) {
+        flamesList.forEach(f => {
+          f.mesh.position.y += f.speed;
+          if(f.mesh.position.y > 8) f.mesh.position.y = 0;
+        });
+      }
+
+      if(activeBoss==='ghast'){
+        ghastBoss.position.y = 4.0 + Math.sin(animTime * 2.0) * 0.5;
+        ghastTentacles.forEach((t, idx) => { t.rotation.z = Math.sin(animTime * 3 + idx) * 0.2; });
+      }
+
+      if(activeBoss==='pika'){
+        pikaBoss.position.y = 3.0 + Math.sin(animTime * 3.0) * 0.3;
+        pikaBoss.rotation.y = Math.sin(animTime * 1.5) * 0.2;
+      }
+
+      if(isSuperChili){ chiliTime-=0.016; bubbleMat.color.setHex(0xfacc15); if(chiliTime<=0){isSuperChili=false; gameSpeed=0.1; bubbleMat.color.setHex(0xffffff);} }
+      else if(distance>=nextChili){ const c=createChili(); c.position.set(LANES[Math.floor(Math.random()*LANES.length)],0.8,-350); c.prevZ = -350; slopeGroup.add(c); obstacles.push(c); nextChili+=280; }
+
+      if(activeBoss==='choco'){ chocoBoss.position.y=3.5+Math.sin(animTime*1.5)*0.4; chocoBoss.rotation.z=Math.sin(animTime)*0.1; }
+      if(activeBoss){ bossAtkCo+=0.016; if(bossAtkCo>2.5){ bossAtk(); bossAtkCo=0; } }
+
+      // TRANSITIONS DE ZONES
+      if (distance>=500 && !isNether && distance<1000) {
+        isNether=true; flameGroup.visible=true;
+        scene.background.setHex(0x2a0808); scene.fog.color.setHex(0x2a0808);
+        trackMat.color.setHex(0x500b0b); borderMat.color.setHex(0xd97706);
+        const a=document.getElementById('zone-alert'); a.innerText="🔥 NETHER"; a.style.color="#ff4500"; a.style.display='block'; setTimeout(()=>a.style.display='none', 2000);
+      }
+      if (distance>=1000 && !isCandy && distance<1600) {
+        isNether=false; flameGroup.visible=false; isCandy=true; candyDecoGroup.visible=true;
+        scene.background.setHex(0xfbcfe8); scene.fog.color.setHex(0xfbcfe8);
+        trackMat.color.setHex(0xf472b6); borderMat.color.setHex(0xf43f5e);
+        const a=document.getElementById('zone-alert'); a.innerText="🍭 BONBONS"; a.style.color="#ec4899"; a.style.display='block'; setTimeout(()=>a.style.display='none', 2000);
+      }
+      if (distance>=1600 && !isPokemon) {
+        isCandy=false; candyDecoGroup.visible=false; isPokemon=true; pokemonDecoGroup.visible=true;
+        scene.background.setHex(0xfef08a); scene.fog.color.setHex(0xfef08a);
+        trackMat.color.setHex(0x3b82f6); borderMat.color.setHex(0xef4444);
+        const a=document.getElementById('zone-alert'); a.innerText="⚡ POKÉMON ZONE"; a.style.color="#1d4ed8"; a.style.display='block'; setTimeout(()=>a.style.display='none', 2000);
+      }
+
+      // BOSS TRIGGERS (Pikachu calé à 2000m)
+      if(distance>=500 && !activeBoss && !catDef) startBoss('cat');
+      if(distance>=1000 && !activeBoss && !ghastDef && distance<1300) startBoss('ghast');
+      if(distance>=1300 && !activeBoss && !chocoDef && distance<1900) startBoss('choco');
+      if(distance>=2000 && !activeBoss && !pikaDef) startBoss('pika');
+
+      let mv=0; if(keys['arrowleft']||keys['q'])mv-=0.18; if(keys['arrowright']||keys['d'])mv+=0.18;
+      playerX=Math.max(-4.2, Math.min(4.2, playerX+mv)); playerGroup.position.x += (playerX-playerGroup.position.x)*0.2;
+      hamsterGroup.rotation.z = -(playerX-playerGroup.position.x)*0.6;
+      
+      if(!isGrounded){ 
+        playerY += vVel; vVel -= 0.015; 
+        if(playerY <= 1){ playerY = 1; isGrounded = true; vVel = 0; } 
+      }
+      playerGroup.position.y = playerY;
+
+      if(!canJump){ jumpTime-=0.016; if(jumpTime<=0){canJump=true; document.getElementById('jumpStatus').innerText="PRÊT";} else document.getElementById('jumpStatus').innerText=jumpTime.toFixed(1)+'s'; }
+      distance += gameSpeed*1.5; document.getElementById('scoreText').innerText=Math.floor(distance);
+      camera.position.set(playerGroup.position.x*0.2, playerY+3.8, 7.5); camera.lookAt(playerGroup.position.x*0.2, playerY, -5);
+
+      for(let i=projectiles.length-1; i>=0; i--){
+        let p=projectiles[i]; p.position.z-=2; 
+        let tBoss = activeBoss==='cat'?catBoss:(activeBoss==='ghast'?ghastBoss:(activeBoss==='choco'?chocoBoss:pikaBoss));
+        if(activeBoss && p.position.z<=tBoss.position.z+1.5){ 
+          bossHealth--; playSound('hit'); document.getElementById('bossHealth').innerText=bossHealth; slopeGroup.remove(p); projectiles.splice(i,1);
+          if(bossHealth<=0){ 
+            if(activeBoss==='cat')catDef=true; else if(activeBoss==='ghast')ghastDef=true; else if(activeBoss==='choco')chocoDef=true; else pikaDef=true; 
+            activeBoss=null; pawWarn.visible=fireWarn.visible=catBoss.visible=ghastBoss.visible=chocoBoss.visible=pikaBoss.visible=false; 
+            clearInterval(bossInt); document.getElementById('boss-hud').style.display='none'; seedsCount+=100; document.getElementById('seedsText').innerText=seedsCount; 
+          }
+        } else if(p.position.z<-100){slopeGroup.remove(p); projectiles.splice(i,1);}
+      }
+
+      for(let i=bossAttacks.length-1; i>=0; i--){ 
+        let b=bossAttacks[i]; b.position.z+=0.4; 
+        if(playerGroup.position.distanceTo(b.position)<1.2 && !isSuperChili) triggerGameOver(); 
+        if(b.position.z>10){slopeGroup.remove(b); bossAttacks.splice(i,1);} 
+      }
+      
+      for(let i=obstacles.length-1; i>=0; i--){
+        let o=obstacles[i];
+        const oldZ = o.position.z;
+        o.position.z += gameSpeed * 10;
+        const newZ = o.position.z;
+
+        if(o.isVacuum && Math.abs(o.position.z)<12) playerX += (o.position.x<playerX? -0.04:0.04);
+        
+        const dx = Math.abs(playerGroup.position.x - o.position.x);
+        const crossedPlayer = (oldZ <= 2.0 && newZ >= -3.0);
+
+        if(o.isCheeseRamp && !o.used && dx < 2.0 && crossedPlayer && playerY < 2.0) {
+          o.used = true; vVel = 0.52; isGrounded = false; playSound('jump');
+          
+          if(activeBoss) {
+            const pr = new THREE.Mesh(new THREE.SphereGeometry(0.5,8,8), new THREE.MeshBasicMaterial({color:0xfacc15}));
+            pr.position.copy(playerGroup.position);
+            slopeGroup.add(pr); projectiles.push(pr);
+          }
+        } else if(dx < 1.3 && crossedPlayer) {
+          if(o.isChili){ isSuperChili=true; chiliTime=5; gameSpeed=0.22; playSound('powerup'); slopeGroup.remove(o); obstacles.splice(i,1); }
+          else if(!o.isCheeseRamp && isSuperChili){ slopeGroup.remove(o); obstacles.splice(i,1); playSound('hit'); }
+          else if(!o.isCheeseRamp && playerY < 1.4) triggerGameOver();
+        }
+
+        if(o.position.z>10){ slopeGroup.remove(o); obstacles.splice(i,1); spawnObstacle(-400); }
+      }
+
+      for(let i=seeds.length-1; i>=0; i--){
+        let s=seeds[i]; s.position.z+=gameSpeed*10;
+        if(hasMagnet && playerGroup.position.distanceTo(s.position)<7){ s.position.x+=(playerGroup.position.x-s.position.x)*0.2; s.position.z+=(playerGroup.position.z-s.position.z)*0.2; }
+        if(playerGroup.position.distanceTo(s.position)<1.2){ playSound('seed'); slopeGroup.remove(s); seeds.splice(i,1); seedsCount++; document.getElementById('seedsText').innerText=seedsCount; }
+        else if(s.position.z>10){ slopeGroup.remove(s); seeds.splice(i,1); spawnSeed(-400); }
+      }
+      renderer.render(scene, camera);
+    }
+
+    function triggerGameOver() { isGameOver=true; clearInterval(bossInt); document.getElementById('gameOverTitle').innerText="💥 CRASH !"; end(); }
+    function triggerVictoire() { isGameOver=true; clearInterval(bossInt); document.getElementById('gameOverTitle').innerText="🏆 VICTOIRE POKÉMON !"; end(); }
+    
+    function end() { 
+      document.getElementById('boss-hud').style.display='none'; 
+      document.getElementById('finalScore').innerText=Math.floor(distance); 
+      document.getElementById('finalSeeds').innerText=seedsCount; 
+      
+      const reviveBtn = document.getElementById('reviveBtn');
+      if (seedsCount >= 50) {
+        reviveBtn.disabled = false;
+        reviveBtn.innerText = "💖 Revivre (50 🌻)";
+      } else {
+        reviveBtn.disabled = true;
+        reviveBtn.innerText = "💖 Revivre (50 🌻 NÉCESSAIRES)";
+      }
+
+      document.getElementById('game-over').style.display='block'; 
+    }
+
+    function reviveGame() {
+      if (seedsCount >= 50) {
+        seedsCount -= 50;
+        document.getElementById('seedsText').innerText = seedsCount;
+        document.getElementById('game-over').style.display = 'none';
+        
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+          if (obstacles[i].position.z > -30 && obstacles[i].position.z < 20) {
+            slopeGroup.remove(obstacles[i]);
+            obstacles.splice(i, 1);
+          }
+        }
+        for (let i = bossAttacks.length - 1; i >= 0; i--) {
+          slopeGroup.remove(bossAttacks[i]);
+          bossAttacks.splice(i, 1);
+        }
+        pawWarn.visible = fireWarn.visible = false;
+
+        if (activeBoss) {
+          document.getElementById('boss-hud').style.display = 'block';
+          bossInt = setInterval(() => { 
+            if(!isGameOver && !isPaused && activeBoss){ 
+              bossTimer--; 
+              document.getElementById('bossTimer').innerText = bossTimer; 
+              if(bossTimer <= 0){ clearInterval(bossInt); triggerGameOver(); } 
+            } 
+          }, 1000);
+        }
+
+        isGameOver = false;
+        animate();
+      }
+    }
+
+    function restartGame() {
+      obstacles.forEach(o=>slopeGroup.remove(o)); seeds.forEach(s=>slopeGroup.remove(s)); projectiles.forEach(p=>slopeGroup.remove(p)); bossAttacks.forEach(b=>slopeGroup.remove(b));
+      obstacles=[]; seeds=[]; projectiles=[]; bossAttacks=[];
+      playerX=0; playerY=1; vVel=0; isGrounded=true; playerGroup.position.set(0,1,0);
+      distance=0; isGameOver=false; isPaused=false; gameSpeed=0.1; isSuperChili=false; nextChili=280;
+      activeBoss=null; catDef=ghastDef=chocoDef=pikaDef=false; isNether=isCandy=isPokemon=false;
+      flameGroup.visible=candyDecoGroup.visible=pokemonDecoGroup.visible=catBoss.visible=ghastBoss.visible=chocoBoss.visible=pikaBoss.visible=pawWarn.visible=fireWarn.visible=false;
+      catPaw.position.set(0,-3,0);
+      scene.background.setHex(0xa67c52); scene.fog.color.setHex(0xa67c52);
+      trackMat.color.setHex(0xfef08a); borderMat.color.setHex(0xf97316);
+      document.getElementById('game-over').style.display='none';
+      initMap();
+      animate();
+    }
+
+    animate();
+  </script>
+</body>
+</html>
